@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Who Wants to Be a Millionaire?</title>
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+    <!-- Start Screen -->
+    <div id="start-screen" class="screen active">
+        <div class="hero-bg">
+            <div class="spotlight"></div>
+            <div class="particles">
+                <span class="particle"></span>
+                <span class="particle"></span>
+                <span class="particle"></span>
+                <span class="particle"></span>
+                <span class="particle"></span>
+                <span class="particle"></span>
+                <span class="particle"></span>
+                <span class="particle"></span>
+            </div>
+        </div>
+        
+        <div class="hero-content">
+            <div class="logo-container">
+                <div class="diamond-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 2 12 12 22 22 12 12 2"></polygon>
+                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                        <polyline points="7 7 12 12 17 7"></polyline>
+                    </svg>
+                </div>
+                <div class="logo">
+                    <p class="logo-subtitle">THE ULTIMATE QUIZ CHALLENGE</p>
+                    <h1>WHO WANTS TO BE A</h1>
+                    <h2 class="logo-title">
+                        <span class="gradient-text">MILLIONAIRE</span>
+                        <span class="question-mark">?</span>
+                    </h2>
+                </div>
+            </div>
+            
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <span class="stat-number">25</span>
+                    <span class="stat-label">Questions</span>
+                </div>
+                <div class="stat-divider">|</div>
+                <div class="stat-item">
+                    <span class="stat-number">$1B</span>
+                    <span class="stat-label">Top Prize</span>
+                </div>
+                <div class="stat-divider">|</div>
+                <div class="stat-item">
+                    <span class="stat-number">3</span>
+                    <span class="stat-label">Lifelines</span>
+                </div>
+            </div>
+            
+            <div class="hero-actions">
+                <button id="start-btn" class="btn-primary">
+                    <span class="btn-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                    </span>
+                    <span class="btn-text">PLAY NOW</span>
+                </button>
+            </div>
+            
+            <p class="hero-tagline">Test your knowledge. Claim your fortune.</p>
+        </div>
+    </div>
+
+    <!-- Quiz Screen -->
+    <div id="quiz-screen" class="screen">
+        <div class="quiz-layout">
+            <div class="quiz-main">
+                <div class="quiz-header">
+                    <div class="question-counter">
+                        <span id="current-question">1</span> / <span id="total-questions">15</span>
+                    </div>
+                    <div class="prize-display">
+                        <span class="prize-label">Current Prize:</span>
+                        <span id="current-prize">$0</span>
+                    </div>
+                </div>
+
+                <div class="quiz-content">
+                    <div class="question-container">
+                        <h2 id="question-text">Question goes here?</h2>
+                    </div>
+
+                    <div class="answers-grid">
+                        <button class="answer-btn" data-answer="A">
+                            <span class="answer-label">A:</span>
+                            <span class="answer-text">Answer 1</span>
+                        </button>
+                        <button class="answer-btn" data-answer="B">
+                            <span class="answer-label">B:</span>
+                            <span class="answer-text">Answer 2</span>
+                        </button>
+                        <button class="answer-btn" data-answer="C">
+                            <span class="answer-label">C:</span>
+                            <span class="answer-text">Answer 3</span>
+                        </button>
+                        <button class="answer-btn" data-answer="D">
+                            <span class="answer-label">D:</span>
+                            <span class="answer-text">Answer 4</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="quiz-footer">
+                    <div class="lifelines">
+                        <button class="lifeline-btn" data-lifeline="5050" title="50:50">
+                            <span>50:50</span>
+                        </button>
+                        <button class="lifeline-btn" data-lifeline="audience" title="Ask the Audience">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                        </button>
+                        <button class="lifeline-btn" data-lifeline="phone" title="Phone a Friend">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="timer">
+                        <div class="timer-circle">
+                            <svg viewBox="0 0 100 100">
+                                <circle class="timer-bg" cx="50" cy="50" r="45"></circle>
+                                <circle class="timer-progress" cx="50" cy="50" r="45"></circle>
+                            </svg>
+                            <span id="timer-text">30</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prize Ladder Sidebar -->
+            <div id="prize-ladder" class="prize-ladder">
+                <h3>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+                        <line x1="12" y1="2" x2="12" y2="22"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    Prize Ladder
+                </h3>
+                <ul id="prize-list">
+                    <li data-level="25"><span class="level">25</span> <span class="prize">$1,000,000,000</span></li>
+                    <li data-level="24"><span class="level">24</span> <span class="prize">$750,000,000</span></li>
+                    <li data-level="23"><span class="level">23</span> <span class="prize">$500,000,000</span></li>
+                    <li data-level="22"><span class="level">22</span> <span class="prize">$250,000,000</span></li>
+                    <li data-level="21"><span class="level">21</span> <span class="prize">$100,000,000</span></li>
+                    <li data-level="20" class="milestone"><span class="level">20</span> <span class="prize">$50,000,000</span></li>
+                    <li data-level="19"><span class="level">19</span> <span class="prize">$25,000,000</span></li>
+                    <li data-level="18"><span class="level">18</span> <span class="prize">$10,000,000</span></li>
+                    <li data-level="17"><span class="level">17</span> <span class="prize">$5,000,000</span></li>
+                    <li data-level="16"><span class="level">16</span> <span class="prize">$2,000,000</span></li>
+                    <li data-level="15"><span class="level">15</span> <span class="prize">$1,000,000</span></li>
+                    <li data-level="14"><span class="level">14</span> <span class="prize">$500,000</span></li>
+                    <li data-level="13"><span class="level">13</span> <span class="prize">$250,000</span></li>
+                    <li data-level="12"><span class="level">12</span> <span class="prize">$125,000</span></li>
+                    <li data-level="11"><span class="level">11</span> <span class="prize">$64,000</span></li>
+                    <li data-level="10" class="milestone"><span class="level">10</span> <span class="prize">$32,000</span></li>
+                    <li data-level="9"><span class="level">9</span> <span class="prize">$16,000</span></li>
+                    <li data-level="8"><span class="level">8</span> <span class="prize">$8,000</span></li>
+                    <li data-level="7"><span class="level">7</span> <span class="prize">$4,000</span></li>
+                    <li data-level="6"><span class="level">6</span> <span class="prize">$2,000</span></li>
+                    <li data-level="5"><span class="level">5</span> <span class="prize">$1,000</span></li>
+                    <li data-level="4" class="milestone"><span class="level">4</span> <span class="prize">$500</span></li>
+                    <li data-level="3"><span class="level">3</span> <span class="prize">$300</span></li>
+                    <li data-level="2"><span class="level">2</span> <span class="prize">$200</span></li>
+                    <li data-level="1"><span class="level">1</span> <span class="prize">$100</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Result Screen -->
+    <div id="result-screen" class="screen">
+        <div class="result-content">
+            <h2 id="result-title">Congratulations!</h2>
+            <div class="result-prize">
+                <span class="prize-label">You Won:</span>
+                <h1 id="won-prize">$1,000,000</h1>
+            </div>
+            <button id="play-again-btn" class="btn-primary">
+                <span class="btn-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                    </svg>
+                </span>
+                <span class="btn-text">PLAY AGAIN</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Audience Poll Modal -->
+    <div id="audience-modal" class="modal">
+        <div class="modal-content">
+            <h3>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                Audience Poll Results
+            </h3>
+            <div class="poll-results">
+                <div class="poll-bar">
+                    <span class="poll-label">A</span>
+                    <div class="bar-container">
+                        <div class="bar" id="poll-a" style="width: 0%"></div>
+                    </div>
+                    <span class="poll-percent" id="percent-a">0%</span>
+                </div>
+                <div class="poll-bar">
+                    <span class="poll-label">B</span>
+                    <div class="bar-container">
+                        <div class="bar" id="poll-b" style="width: 0%"></div>
+                    </div>
+                    <span class="poll-percent" id="percent-b">0%</span>
+                </div>
+                <div class="poll-bar">
+                    <span class="poll-label">C</span>
+                    <div class="bar-container">
+                        <div class="bar" id="poll-c" style="width: 0%"></div>
+                    </div>
+                    <span class="poll-percent" id="percent-c">0%</span>
+                </div>
+                <div class="poll-bar">
+                    <span class="poll-label">D</span>
+                    <div class="bar-container">
+                        <div class="bar" id="poll-d" style="width: 0%"></div>
+                    </div>
+                    <span class="poll-percent" id="percent-d">0%</span>
+                </div>
+            </div>
+            <button class="close-modal">Close</button>
+        </div>
+    </div>
+
+    <!-- Phone a Friend Modal -->
+    <div id="phone-modal" class="modal">
+        <div class="modal-content">
+            <h3>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                </svg>
+                Phone a Friend
+            </h3>
+            <div class="phone-message">
+                <p id="friend-response">Calling your friend...</p>
+            </div>
+            <button class="close-modal">Close</button>
+        </div>
+    </div>
+
+    <script src="assets/script.js"></script>
+</body>
+</html>
