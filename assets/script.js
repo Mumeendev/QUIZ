@@ -28,7 +28,17 @@ let gameState = {
     },
     timer: null,
     timeLeft: 30,
-    isAnswered: false
+    isAnswered: false,
+    activePowerUps: [], // Purchased power-ups for this game
+    doublePrizeActive: false,
+    secondChanceActive: false,
+    hintSystemActive: false,
+    usedSkipQuestion: false,
+    usedRemoveWrong: false,
+    usedExtraTime: false,
+    extraTimeCount: 0,
+    freezeTimerActive: false,
+    freezeTimerCount: 0
 };
 
 // ===== DOM ELEMENTS =====
@@ -506,7 +516,79 @@ function startGame() {
     playBackgroundMusic();
     startScreen.classList.remove('active');
     quizScreen.classList.add('active');
+    
+    // Initialize power-ups from shop purchases
+    initializePowerUps();
+    
     loadQuestion();
+}
+
+function initializePowerUps() {
+    // Check if there are any active power-ups from shop purchases
+    if (gameState.activePowerUps && gameState.activePowerUps.length > 0) {
+        console.log('Active power-ups for this game:', gameState.activePowerUps);
+        
+        // Show notification about active power-ups
+        if (gameState.activePowerUps.includes('extra-time')) {
+            setTimeout(() => showPowerUpNotification('⏱️ Extra Time purchased!'), 500);
+        }
+        if (gameState.activePowerUps.includes('double-prize')) {
+            setTimeout(() => showPowerUpNotification('💰 Double Prize purchased!'), 1000);
+        }
+        if (gameState.activePowerUps.includes('skip-question')) {
+            setTimeout(() => showPowerUpNotification('⏭️ Skip Question available!'), 1500);
+            // Add skip button to UI
+            addSkipQuestionButton();
+        }
+        if (gameState.activePowerUps.includes('remove-wrong')) {
+            setTimeout(() => showPowerUpNotification('✂️ Remove Wrong purchased!'), 2000);
+        }
+        if (gameState.activePowerUps.includes('freeze-timer')) {
+            setTimeout(() => showPowerUpNotification('❄️ Freeze Timer purchased!'), 2500);
+        }
+        if (gameState.activePowerUps.includes('second-chance')) {
+            setTimeout(() => showPowerUpNotification('🔄 Second Chance available!'), 3000);
+        }
+        if (gameState.activePowerUps.includes('hint-system')) {
+            setTimeout(() => showPowerUpNotification('💡 Hint System activated!'), 3500);
+        }
+    }
+}
+
+function addSkipQuestionButton() {
+    // Check if skip button already exists
+    if (document.getElementById('skip-question-btn')) return;
+    
+    const skipBtn = document.createElement('button');
+    skipBtn.id = 'skip-question-btn';
+    skipBtn.className = 'lifeline-btn';
+    skipBtn.title = 'Skip Question';
+    skipBtn.innerHTML = '⏭️';
+    skipBtn.style.fontSize = '1.5rem';
+    
+    skipBtn.addEventListener('click', () => {
+        if (!gameState.isAnswered && !gameState.usedSkipQuestion) {
+            gameState.usedSkipQuestion = true;
+            showPowerUpNotification('Question Skipped!');
+            playSound('lifeline');
+            
+            // Move to next question
+            if (gameState.currentQuestion < questions.length - 1) {
+                gameState.currentQuestion++;
+                loadQuestion();
+            }
+            
+            // Disable the button
+            skipBtn.style.opacity = '0.3';
+            skipBtn.style.pointerEvents = 'none';
+        }
+    });
+    
+    // Add to lifelines container
+    const lifelines = document.querySelector('.lifelines');
+    if (lifelines) {
+        lifelines.appendChild(skipBtn);
+    }
 }
 
 function loadQuestion() {
@@ -528,15 +610,52 @@ function loadQuestion() {
         btn.querySelector('.answer-text').textContent = question.answers[answerKey];
     });
 
+    // Apply Remove Wrong power-up if available
+    if (gameState.activePowerUps.includes('remove-wrong') && !gameState.usedRemoveWrong) {
+        gameState.usedRemoveWrong = true;
+        const wrongAnswers = ['A', 'B', 'C', 'D'].filter(a => a !== question.correct);
+        const toRemove = wrongAnswers.sort(() => Math.random() - 0.5).slice(0, 1);
+        toRemove.forEach(answer => {
+            const btn = document.querySelector(`[data-answer="${answer}"]`);
+            btn.classList.add('hidden');
+        });
+        showPowerUpNotification('Remove Wrong Answer Activated!');
+    }
+
+    // Show hint if hint system is active
+    if (gameState.activePowerUps.includes('hint-system') && !gameState.hintSystemActive) {
+        gameState.hintSystemActive = true;
+        showHint(question);
+    }
+
     // Update prize ladder
     updatePrizeLadder();
 
-    // Start timer
-    gameState.timeLeft = timerLimits[gameState.currentQuestion];
+    // Start timer - check for extra time and freeze timer
+    let baseTime = timerLimits[gameState.currentQuestion];
+    
+    if (gameState.activePowerUps.includes('extra-time') && gameState.extraTimeCount < 3) {
+        baseTime += 15;
+        gameState.extraTimeCount++;
+        if (gameState.extraTimeCount === 1) {
+            showPowerUpNotification('Extra Time Activated! +15 seconds for next 3 questions');
+        }
+    }
+    
+    if (gameState.activePowerUps.includes('freeze-timer') && gameState.freezeTimerCount === 0) {
+        gameState.freezeTimerActive = true;
+        gameState.freezeTimerCount = 20; // 20 seconds frozen
+        showPowerUpNotification('Timer Frozen for 20 seconds!');
+    }
+    
+    gameState.timeLeft = baseTime;
     startTimer();
 
     // Reset answer state
     gameState.isAnswered = false;
+    
+    // Reset hint system for next question
+    gameState.hintSystemActive = false;
 
     // Add fade-in animation
     questionText.parentElement.classList.add('fade-in');
@@ -546,6 +665,45 @@ function loadQuestion() {
 
     // Play question load sound
     playSound('click');
+}
+
+function showHint(question) {
+    // Create a subtle hint by highlighting the correct answer slightly
+    const correctBtn = document.querySelector(`[data-answer="${question.correct}"]`);
+    if (correctBtn) {
+        // Add a very subtle glow to hint (not too obvious)
+        correctBtn.style.boxShadow = '0 0 5px rgba(255, 215, 0, 0.3)';
+        setTimeout(() => {
+            correctBtn.style.boxShadow = '';
+        }, 1000);
+    }
+}
+
+function showPowerUpNotification(message) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = 'powerup-notification';
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, #ffd700 0%, #b8941f 100%);
+        color: #0a0e27;
+        padding: 15px 30px;
+        border-radius: 8px;
+        font-weight: bold;
+        font-size: 1.1rem;
+        z-index: 10000;
+        box-shadow: 0 4px 20px rgba(255, 215, 0, 0.5);
+        animation: slideDown 0.5s ease, fadeOut 0.5s ease 2.5s forwards;
+    `;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
 }
 
 function selectAnswer(answer) {
@@ -575,6 +733,12 @@ function selectAnswer(answer) {
             selectedBtn.classList.add('correct');
             gameState.score = gameState.currentQuestion + 1;
             
+            // Apply Double Prize if active
+            if (gameState.activePowerUps.includes('double-prize') && !gameState.doublePrizeActive) {
+                gameState.doublePrizeActive = true;
+                showPowerUpNotification('Double Prize Activated! Next correct answer worth 2x!');
+            }
+
             // Play correct sound
             playSound('correct');
 
@@ -591,7 +755,31 @@ function selectAnswer(answer) {
             // Wrong answer
             selectedBtn.classList.add('wrong');
             correctBtn.classList.add('correct');
-            
+
+            // Check for Second Chance power-up
+            if (gameState.activePowerUps.includes('second-chance') && !gameState.secondChanceActive) {
+                gameState.secondChanceActive = true;
+                showPowerUpNotification('Second Chance Activated! Try again!');
+                
+                // Reset the answer selection and give another chance
+                setTimeout(() => {
+                    selectedBtn.classList.remove('selected', 'wrong');
+                    correctBtn.classList.remove('correct');
+                    answerBtns.forEach(btn => btn.classList.remove('disabled'));
+                    
+                    // Remove hidden answers from Remove Wrong
+                    answerBtns.forEach(btn => btn.classList.remove('hidden'));
+                    
+                    gameState.isAnswered = false;
+                    // Restart timer
+                    gameState.timeLeft = timerLimits[gameState.currentQuestion];
+                    startTimer();
+                }, 1000);
+                
+                playSound('lifeline');
+                return;
+            }
+
             // Play wrong sound
             playSound('wrong');
 
@@ -701,6 +889,18 @@ function startTimer() {
     updateTimerDisplay();
 
     gameState.timer = setInterval(() => {
+        // Check if freeze timer is active
+        if (gameState.freezeTimerActive && gameState.freezeTimerCount > 0) {
+            gameState.freezeTimerCount--;
+            if (gameState.freezeTimerCount === 0) {
+                gameState.freezeTimerActive = false;
+                showPowerUpNotification('⏱️ Timer Unfrozen!');
+            }
+            // Don't decrease timeLeft while frozen
+            updateTimerDisplay();
+            return;
+        }
+        
         gameState.timeLeft--;
         updateTimerDisplay();
 
@@ -771,12 +971,22 @@ function endGame(won) {
 
     if (won) {
         resultTitle.textContent = "Congratulations!";
-        wonPrizeEl.textContent = prizeLevels[questions.length - 1];
+        
+        // Calculate final prize with double prize power-up if active
+        let finalPrize = prizeLevels[questions.length - 1];
+        if (gameState.doublePrizeActive) {
+            // Double the prize
+            const prizeNumber = parseInt(finalPrize.replace(/[$,]/g, ''));
+            finalPrize = '$' + (prizeNumber * 2).toLocaleString();
+            showPowerUpNotification('🎉 Double Prize Applied! You won ' + finalPrize + '!');
+        }
+        
+        wonPrizeEl.textContent = finalPrize;
         playSound('win');
         stopBackgroundMusic();
-        
+
         // Set player balance for shop
-        setBalanceFromGame(prizeLevels[questions.length - 1]);
+        setBalanceFromGame(finalPrize);
     } else {
         resultTitle.textContent = "Game Over";
         // Calculate guaranteed prize based on milestones
@@ -794,13 +1004,20 @@ function endGame(won) {
         if (gameState.score > 0 && guaranteedPrize === "$0") {
             guaranteedPrize = prizeLevels[gameState.score - 1];
         }
+        
+        // Apply double prize if active
+        if (gameState.doublePrizeActive && guaranteedPrize !== "$0") {
+            const prizeNumber = parseInt(guaranteedPrize.replace(/[$,]/g, ''));
+            guaranteedPrize = '$' + (prizeNumber * 2).toLocaleString();
+            showPowerUpNotification('💰 Double Prize Applied!');
+        }
 
         wonPrizeEl.textContent = guaranteedPrize;
-        
+
         // Play the lose sound when game is over
         playSound('lose');
         stopBackgroundMusic();
-        
+
         // Set player balance for shop
         setBalanceFromGame(guaranteedPrize);
     }
@@ -823,11 +1040,27 @@ function resetGame() {
         },
         timer: null,
         timeLeft: 30,
-        isAnswered: false
+        isAnswered: false,
+        activePowerUps: [], // Clear power-ups on new game
+        doublePrizeActive: false,
+        secondChanceActive: false,
+        hintSystemActive: false,
+        usedSkipQuestion: false,
+        usedRemoveWrong: false,
+        usedExtraTime: false,
+        extraTimeCount: 0,
+        freezeTimerActive: false,
+        freezeTimerCount: 0
     };
 
     // Reset lifeline buttons
     lifelineBtns.forEach(btn => btn.classList.remove('used'));
+    
+    // Remove skip question button if it exists
+    const skipBtn = document.getElementById('skip-question-btn');
+    if (skipBtn) {
+        skipBtn.remove();
+    }
 
     // Reset screens
     resultScreen.classList.remove('active');
