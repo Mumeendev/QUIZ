@@ -52,6 +52,147 @@ const closeModalBtns = document.querySelectorAll('.close-modal');
 const resultTitle = document.getElementById('result-title');
 const wonPrizeEl = document.getElementById('won-prize');
 
+// ===== AUDIO ELEMENTS =====
+const audioElements = {
+    start: document.getElementById('audio-start'),
+    correct: document.getElementById('audio-correct'),
+    wrong: document.getElementById('audio-wrong'),
+    timer: document.getElementById('audio-timer'),
+    lifeline: document.getElementById('audio-lifeline'),
+    win: document.getElementById('audio-win'),
+    lose: document.getElementById('audio-lose'),
+    click: document.getElementById('audio-click'),
+    background: document.getElementById('audio-background')
+};
+
+// ===== SOUND SYSTEM =====
+let soundEnabled = true;
+let backgroundMusicPlaying = false;
+let audioContext = null;
+let backgroundMusicNodes = [];
+
+function playSound(soundName) {
+    if (!soundEnabled || !audioElements[soundName]) return;
+    
+    try {
+        audioElements[soundName].currentTime = 0;
+        audioElements[soundName].volume = 0.7;
+        audioElements[soundName].play().catch(err => console.log('Audio play failed:', err));
+    } catch (error) {
+        console.log('Sound error:', error);
+    }
+}
+
+function generateBackgroundMusic() {
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    // Create a simple quiz game background melody
+    const duration = 30; // 30 seconds loop
+    const sampleRate = audioContext.sampleRate;
+    const buffer = audioContext.createBuffer(2, sampleRate * duration, sampleRate);
+    
+    // Musical notes for a catchy quiz melody (in Hz)
+    const notes = [
+        523.25, // C5
+        659.25, // E5
+        783.99, // G5
+        659.25, // E5
+        523.25, // C5
+        587.33, // D5
+        659.25, // E5
+        783.99, // G5
+        880.00, // A5
+        783.99, // G5
+        659.25, // E5
+        587.33, // D5
+        523.25, // C5
+        493.88, // B4
+        523.25, // C5
+        659.25, // E5
+    ];
+    
+    const noteDuration = 0.4; // seconds per note
+    const tempo = 120; // BPM
+    
+    for (let channel = 0; channel < 2; channel++) {
+        const data = buffer.getChannelData(channel);
+        let sampleIndex = 0;
+        
+        for (let note of notes) {
+            const samplesPerNote = Math.floor(sampleRate * noteDuration);
+            
+            for (let i = 0; i < samplesPerNote && sampleIndex < data.length; i++) {
+                const t = i / sampleRate;
+                const envelope = Math.exp(-t * 3); // Decay envelope
+                
+                // Main tone
+                let sample = Math.sin(2 * Math.PI * note * t);
+                
+                // Add harmonics for richer sound
+                sample += 0.5 * Math.sin(2 * Math.PI * note * 2 * t);
+                sample += 0.3 * Math.sin(2 * Math.PI * note * 3 * t);
+                
+                // Apply envelope
+                sample *= envelope;
+                
+                // Add bass line
+                const bassNote = note / 2;
+                sample += 0.4 * Math.sin(2 * Math.PI * bassNote * t);
+                
+                // Add subtle vibrato
+                sample *= 1 + 0.1 * Math.sin(2 * Math.PI * 5 * t);
+                
+                // Stereo effect
+                if (channel === 1) {
+                    sample *= 0.9;
+                    sample += 0.1 * Math.sin(2 * Math.PI * (note + 2) * t);
+                }
+                
+                data[sampleIndex] = sample * 0.15; // Lower volume for background
+                sampleIndex++;
+            }
+        }
+    }
+    
+    return buffer;
+}
+
+function playBackgroundMusic() {
+    if (!soundEnabled || !audioElements.background || backgroundMusicPlaying) return;
+    
+    try {
+        audioElements.background.volume = 0.3;
+        audioElements.background.play().catch(err => console.log('Background music failed:', err));
+        backgroundMusicPlaying = true;
+    } catch (error) {
+        console.log('Background music error:', error);
+    }
+}
+
+function stopBackgroundMusic() {
+    if (!audioElements.background) return;
+    
+    try {
+        audioElements.background.pause();
+        audioElements.background.currentTime = 0;
+        backgroundMusicPlaying = false;
+    } catch (error) {
+        console.log('Background music pause error:', error);
+    }
+}
+
+function toggleSound() {
+    soundEnabled = !soundEnabled;
+    if (!soundEnabled) {
+        stopBackgroundMusic();
+    } else {
+        playBackgroundMusic();
+    }
+    return soundEnabled;
+}
+
 // ===== CSV PARSER =====
 function parseCSV(csvText) {
     const lines = csvText.trim().split('\n');
@@ -194,19 +335,40 @@ function updateDynamicArrays() {
 }
 
 // ===== EVENT LISTENERS =====
-startBtn.addEventListener('click', startGame);
-playAgainBtn.addEventListener('click', resetGame);
+startBtn.addEventListener('click', () => {
+    playSound('click');
+    startGame();
+});
+playAgainBtn.addEventListener('click', () => {
+    playSound('click');
+    resetGame();
+});
 
 answerBtns.forEach(btn => {
     btn.addEventListener('click', () => selectAnswer(btn.dataset.answer));
+    
+    // Add hover sound effect
+    btn.addEventListener('mouseenter', () => {
+        if (!gameState.isAnswered) {
+            playSound('click');
+        }
+    });
 });
 
 lifelineBtns.forEach(btn => {
     btn.addEventListener('click', () => useLifeline(btn.dataset.lifeline));
+    
+    // Add hover sound effect
+    btn.addEventListener('mouseenter', () => {
+        if (!btn.classList.contains('used')) {
+            playSound('click');
+        }
+    });
 });
 
 closeModalBtns.forEach(btn => {
     btn.addEventListener('click', () => {
+        playSound('click');
         audienceModal.classList.remove('active');
         phoneModal.classList.remove('active');
     });
@@ -219,6 +381,8 @@ function startGame() {
         console.error('No questions loaded yet');
         return;
     }
+    playSound('start');
+    playBackgroundMusic();
     startScreen.classList.remove('active');
     quizScreen.classList.add('active');
     loadQuestion();
@@ -258,6 +422,9 @@ function loadQuestion() {
     setTimeout(() => {
         questionText.parentElement.classList.remove('fade-in');
     }, 500);
+
+    // Play question load sound
+    playSound('click');
 }
 
 function selectAnswer(answer) {
@@ -276,6 +443,9 @@ function selectAnswer(answer) {
     // Disable all buttons
     answerBtns.forEach(btn => btn.classList.add('disabled'));
 
+    // Play click sound when selecting
+    playSound('click');
+
     // Show correct answer after delay
     setTimeout(() => {
         if (answer === question.correct) {
@@ -283,6 +453,9 @@ function selectAnswer(answer) {
             selectedBtn.classList.remove('selected');
             selectedBtn.classList.add('correct');
             gameState.score = gameState.currentQuestion + 1;
+            
+            // Play correct sound
+            playSound('correct');
 
             setTimeout(() => {
                 if (gameState.currentQuestion < questions.length - 1) {
@@ -297,6 +470,9 @@ function selectAnswer(answer) {
             // Wrong answer
             selectedBtn.classList.add('wrong');
             correctBtn.classList.add('correct');
+            
+            // Play wrong sound
+            playSound('wrong');
 
             setTimeout(() => {
                 endGame(false);
@@ -314,6 +490,7 @@ function useLifeline(lifeline) {
                 useFiftyFifty();
                 gameState.lifelines.fiftyFifty = true;
                 document.querySelector('[data-lifeline="5050"]').classList.add('used');
+                playSound('lifeline');
             }
             break;
         case 'audience':
@@ -321,6 +498,7 @@ function useLifeline(lifeline) {
                 useAudience();
                 gameState.lifelines.audience = true;
                 document.querySelector('[data-lifeline="audience"]').classList.add('used');
+                playSound('lifeline');
             }
             break;
         case 'phone':
@@ -328,6 +506,7 @@ function useLifeline(lifeline) {
                 usePhone();
                 gameState.lifelines.phone = true;
                 document.querySelector('[data-lifeline="phone"]').classList.add('used');
+                playSound('lifeline');
             }
             break;
     }
@@ -427,6 +606,10 @@ function updateTimerDisplay() {
     // Change color when time is low
     if (gameState.timeLeft <= 10) {
         timerProgress.style.stroke = 'var(--danger-red)';
+        // Play timer warning sound at 10 seconds
+        if (gameState.timeLeft === 10) {
+            playSound('timer');
+        }
     } else {
         timerProgress.style.stroke = 'var(--accent-gold)';
     }
@@ -468,25 +651,29 @@ function endGame(won) {
     if (won) {
         resultTitle.textContent = "Congratulations!";
         wonPrizeEl.textContent = prizeLevels[questions.length - 1];
+        playSound('win');
+        stopBackgroundMusic();
     } else {
         resultTitle.textContent = "Game Over";
         // Calculate guaranteed prize based on milestones
         let guaranteedPrize = "$0";
         const milestoneLevels = [4, 10, 20];
         const milestonePrizes = ["$500", "$32,000", "$50,000,000"];
-        
+
         for (let i = milestoneLevels.length - 1; i >= 0; i--) {
             if (gameState.score >= milestoneLevels[i]) {
                 guaranteedPrize = milestonePrizes[i];
                 break;
             }
         }
-        
+
         if (gameState.score > 0 && guaranteedPrize === "$0") {
             guaranteedPrize = prizeLevels[gameState.score - 1];
         }
-        
+
         wonPrizeEl.textContent = guaranteedPrize;
+        playSound('lose');
+        stopBackgroundMusic();
     }
 }
 
@@ -496,7 +683,7 @@ function resetGame() {
     totalQuestionsEl.textContent = questions.length;
     updateDynamicArrays();
     updateHeroStats();
-    
+
     gameState = {
         currentQuestion: 0,
         score: 0,
@@ -516,6 +703,10 @@ function resetGame() {
     // Reset screens
     resultScreen.classList.remove('active');
     quizScreen.classList.add('active');
+    
+    // Play start sound and restart background music
+    playSound('start');
+    playBackgroundMusic();
 
     loadQuestion();
 }
