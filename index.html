@@ -141,6 +141,14 @@
                             <span id="timer-text">30</span>
                         </div>
                     </div>
+                    <button id="sound-toggle" class="sound-toggle" title="Toggle Sound">
+                        <svg id="sound-on-icon" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                        </svg>
+                        <svg id="sound-off-icon" viewBox="0 0 24 24" fill="currentColor" width="24" height="24" style="display: none;">
+                            <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+                        </svg>
+                    </button>
                 </div>
             </div>
 
@@ -192,15 +200,96 @@
                 <span class="prize-label">You Won:</span>
                 <h1 id="won-prize">$1,000,000</h1>
             </div>
-            <button id="play-again-btn" class="btn-primary">
-                <span class="btn-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
-                        <polyline points="23 4 23 10 17 10"></polyline>
-                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+            <div class="result-actions">
+                <button id="play-again-btn" class="btn-primary">
+                    <span class="btn-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                        </svg>
+                    </span>
+                    <span class="btn-text">PLAY AGAIN</span>
+                </button>
+                <button id="shop-btn" class="btn-shop">
+                    <span class="btn-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                            <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+                        </svg>
+                    </span>
+                    <span class="btn-text">SHOP</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shop Screen -->
+    <div id="shop-screen" class="screen">
+        <div class="shop-content">
+            <div class="shop-header">
+                <h2>
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="32" height="32">
+                        <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
                     </svg>
-                </span>
-                <span class="btn-text">PLAY AGAIN</span>
+                    Quiz Shop
+                </h2>
+                <div class="shop-balance">
+                    <span class="balance-label">Your Balance:</span>
+                    <span id="shop-balance-amount">$0</span>
+                </div>
+            </div>
+            
+            <div class="shop-categories">
+                <button class="category-btn active" data-category="all">All Items</button>
+                <button class="category-btn" data-category="powerups">Power-ups</button>
+                <button class="category-btn" data-category="themes">Themes</button>
+                <button class="category-btn" data-category="special">Special</button>
+            </div>
+            
+            <div class="shop-grid" id="shop-grid">
+                <!-- Shop items will be dynamically inserted here -->
+            </div>
+            
+            <button id="back-to-result-btn" class="btn-back">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                Back to Results
             </button>
+        </div>
+    </div>
+
+    <!-- Purchase Confirmation Modal -->
+    <div id="purchase-modal" class="modal">
+        <div class="modal-content purchase-modal">
+            <h3>Confirm Purchase</h3>
+            <div class="purchase-details">
+                <div class="item-preview" id="purchase-item-preview">
+                    <span class="item-icon" id="purchase-item-icon">🎁</span>
+                    <h4 id="purchase-item-name">Item Name</h4>
+                </div>
+                <div class="purchase-price">
+                    <span class="price-label">Price:</span>
+                    <span class="price-value" id="purchase-item-price">$0</span>
+                </div>
+                <div class="purchase-balance">
+                    <span class="balance-label">Your Balance:</span>
+                    <span class="balance-value" id="purchase-balance">$0</span>
+                </div>
+            </div>
+            <div class="purchase-actions">
+                <button id="confirm-purchase-btn" class="btn-confirm">Confirm Purchase</button>
+                <button id="cancel-purchase-btn" class="btn-cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Purchase Success Modal -->
+    <div id="purchase-success-modal" class="modal">
+        <div class="modal-content success-modal">
+            <div class="success-icon">✓</div>
+            <h3>Purchase Successful!</h3>
+            <p id="success-message">You've successfully purchased the item!</p>
+            <button id="close-success-modal" class="btn-close-success">Continue Shopping</button>
         </div>
     </div>
 

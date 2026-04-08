@@ -51,6 +51,9 @@ const phoneModal = document.getElementById('phone-modal');
 const closeModalBtns = document.querySelectorAll('.close-modal');
 const resultTitle = document.getElementById('result-title');
 const wonPrizeEl = document.getElementById('won-prize');
+const soundToggleBtn = document.getElementById('sound-toggle');
+const soundOnIcon = document.getElementById('sound-on-icon');
+const soundOffIcon = document.getElementById('sound-off-icon');
 
 // ===== AUDIO ELEMENTS =====
 const audioElements = {
@@ -79,7 +82,105 @@ function playSound(soundName) {
         audioElements[soundName].volume = 0.7;
         audioElements[soundName].play().catch(err => console.log('Audio play failed:', err));
     } catch (error) {
+        // If audio file doesn't exist, generate sound programmatically
+        if (soundName === 'wrong') {
+            playWrongSound();
+        } else if (soundName === 'correct') {
+            playCorrectSound();
+        }
         console.log('Sound error:', error);
+    }
+}
+
+function playWrongSound() {
+    if (!soundEnabled) return;
+    
+    try {
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        
+        if (audioContext.state === 'suspended') {
+            audioContext.resume();
+        }
+        
+        const now = audioContext.currentTime;
+        
+        // Create a descending buzzer sound for wrong answer
+        const oscillator1 = audioContext.createOscillator();
+        const oscillator2 = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator1.type = 'sawtooth';
+        oscillator2.type = 'square';
+        
+        // Descending frequency
+        oscillator1.frequency.setValueAtTime(400, now);
+        oscillator1.frequency.exponentialRampToValueAtTime(150, now + 0.5);
+        
+        oscillator2.frequency.setValueAtTime(350, now);
+        oscillator2.frequency.exponentialRampToValueAtTime(120, now + 0.5);
+        
+        gainNode.gain.setValueAtTime(0.3, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+        
+        oscillator1.connect(gainNode);
+        oscillator2.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator1.start(now);
+        oscillator2.start(now);
+        oscillator1.stop(now + 0.6);
+        oscillator2.stop(now + 0.6);
+        
+    } catch (error) {
+        console.log('Wrong sound error:', error);
+    }
+}
+
+function playCorrectSound() {
+    if (!soundEnabled) return;
+    
+    try {
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        
+        if (audioContext.state === 'suspended') {
+            audioContext.resume();
+        }
+        
+        const now = audioContext.currentTime;
+        
+        // Create an ascending happy sound for correct answer
+        const oscillator1 = audioContext.createOscillator();
+        const oscillator2 = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator1.type = 'sine';
+        oscillator2.type = 'sine';
+        
+        // Ascending frequency
+        oscillator1.frequency.setValueAtTime(523.25, now); // C5
+        oscillator1.frequency.exponentialRampToValueAtTime(783.99, now + 0.3); // G5
+        
+        oscillator2.frequency.setValueAtTime(659.25, now + 0.15); // E5
+        oscillator2.frequency.exponentialRampToValueAtTime(1046.50, now + 0.4); // C6
+        
+        gainNode.gain.setValueAtTime(0.25, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+        
+        oscillator1.connect(gainNode);
+        oscillator2.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator1.start(now);
+        oscillator2.start(now + 0.15);
+        oscillator1.stop(now + 0.5);
+        oscillator2.stop(now + 0.5);
+        
+    } catch (error) {
+        console.log('Correct sound error:', error);
     }
 }
 
@@ -164,6 +265,7 @@ function playBackgroundMusic() {
     
     try {
         audioElements.background.volume = 0.3;
+        audioElements.background.currentTime = 0;
         audioElements.background.play().catch(err => console.log('Background music failed:', err));
         backgroundMusicPlaying = true;
     } catch (error) {
@@ -176,11 +278,30 @@ function stopBackgroundMusic() {
     
     try {
         audioElements.background.pause();
-        audioElements.background.currentTime = 0;
         backgroundMusicPlaying = false;
     } catch (error) {
         console.log('Background music pause error:', error);
     }
+}
+
+function updateSoundIcon() {
+    if (soundEnabled) {
+        soundOnIcon.style.display = 'block';
+        soundOffIcon.style.display = 'none';
+        soundToggleBtn.classList.remove('muted');
+    } else {
+        soundOnIcon.style.display = 'none';
+        soundOffIcon.style.display = 'block';
+        soundToggleBtn.classList.add('muted');
+    }
+}
+
+// Sound toggle button event listener
+if (soundToggleBtn) {
+    soundToggleBtn.addEventListener('click', () => {
+        toggleSound();
+        updateSoundIcon();
+    });
 }
 
 function toggleSound() {
@@ -257,7 +378,7 @@ function shuffleArray(array) {
 }
 
 // ===== LOAD QUESTIONS FROM CSV =====
-const QUESTIONS_PER_GAME = 25; // Number of questions per quiz session
+const QUESTIONS_PER_GAME = 30; // Number of questions per quiz session
 let allQuestions = []; // Store all loaded questions
 
 async function loadQuestions() {
@@ -653,6 +774,9 @@ function endGame(won) {
         wonPrizeEl.textContent = prizeLevels[questions.length - 1];
         playSound('win');
         stopBackgroundMusic();
+        
+        // Set player balance for shop
+        setBalanceFromGame(prizeLevels[questions.length - 1]);
     } else {
         resultTitle.textContent = "Game Over";
         // Calculate guaranteed prize based on milestones
@@ -672,8 +796,13 @@ function endGame(won) {
         }
 
         wonPrizeEl.textContent = guaranteedPrize;
+        
+        // Play the lose sound when game is over
         playSound('lose');
         stopBackgroundMusic();
+        
+        // Set player balance for shop
+        setBalanceFromGame(guaranteedPrize);
     }
 }
 
@@ -710,6 +839,334 @@ function resetGame() {
 
     loadQuestion();
 }
+
+// ===== SHOP SYSTEM =====
+let playerBalance = 0;
+let ownedItems = [];
+let selectedItemForPurchase = null;
+
+// Shop items data
+const shopItems = [
+    // Power-ups
+    {
+        id: 'extra-time',
+        name: 'Extra Time',
+        description: 'Add 15 seconds to your timer for the next 3 questions',
+        price: 5000,
+        category: 'powerups',
+        icon: '⏱️',
+        type: 'consumable'
+    },
+    {
+        id: 'double-prize',
+        name: 'Double Prize',
+        description: 'Double the prize money for your next correct answer',
+        price: 15000,
+        category: 'powerups',
+        icon: '💰',
+        type: 'consumable'
+    },
+    {
+        id: 'skip-question',
+        name: 'Skip Question',
+        description: 'Skip the current question and move to the next one',
+        price: 10000,
+        category: 'powerups',
+        icon: '⏭️',
+        type: 'consumable'
+    },
+    {
+        id: 'remove-wrong',
+        name: 'Remove Wrong',
+        description: 'Automatically remove one wrong answer (better than 50:50)',
+        price: 8000,
+        category: 'powerups',
+        icon: '✂️',
+        type: 'consumable'
+    },
+    {
+        id: 'freeze-timer',
+        name: 'Freeze Timer',
+        description: 'Freeze the timer for 20 seconds on your next question',
+        price: 12000,
+        category: 'powerups',
+        icon: '❄️',
+        type: 'consumable'
+    },
+    {
+        id: 'second-chance',
+        name: 'Second Chance',
+        description: 'Get a second chance if you answer incorrectly',
+        price: 25000,
+        category: 'powerups',
+        icon: '🔄',
+        type: 'consumable'
+    },
+    // Themes
+    {
+        id: 'theme-gold',
+        name: 'Golden Theme',
+        description: 'Change the game theme to luxurious gold',
+        price: 20000,
+        category: 'themes',
+        icon: '👑',
+        type: 'permanent'
+    },
+    {
+        id: 'theme-neon',
+        name: 'Neon Lights',
+        description: 'Transform the game with vibrant neon colors',
+        price: 25000,
+        category: 'themes',
+        icon: '💡',
+        type: 'permanent'
+    },
+    {
+        id: 'theme-space',
+        name: 'Space Theme',
+        description: 'Play among the stars with a cosmic background',
+        price: 30000,
+        category: 'themes',
+        icon: '🚀',
+        type: 'permanent'
+    },
+    {
+        id: 'theme-ocean',
+        name: 'Ocean Breeze',
+        description: 'Relaxing ocean-themed theme for your game',
+        price: 20000,
+        category: 'themes',
+        icon: '🌊',
+        type: 'permanent'
+    },
+    // Special
+    {
+        id: 'hint-system',
+        name: 'Hint System',
+        description: 'Get a subtle hint for each question',
+        price: 35000,
+        category: 'special',
+        icon: '💡',
+        type: 'permanent'
+    },
+    {
+        id: 'stats-booster',
+        name: 'Stats Booster',
+        description: 'Track your performance with detailed statistics',
+        price: 15000,
+        category: 'special',
+        icon: '📊',
+        type: 'permanent'
+    },
+    {
+        id: 'custom-name',
+        name: 'Custom Player Name',
+        description: 'Set your own custom player name',
+        price: 10000,
+        category: 'special',
+        icon: '✏️',
+        type: 'permanent'
+    },
+    {
+        id: 'victory-music',
+        name: 'Victory Music Pack',
+        description: 'Unlock special victory music tracks',
+        price: 18000,
+        category: 'special',
+        icon: '🎵',
+        type: 'permanent'
+    }
+];
+
+// DOM elements for shop
+const shopScreen = document.getElementById('shop-screen');
+const shopGrid = document.getElementById('shop-grid');
+const shopBalanceAmount = document.getElementById('shop-balance-amount');
+const shopBtn = document.getElementById('shop-btn');
+const backToResultBtn = document.getElementById('back-to-result-btn');
+const purchaseModal = document.getElementById('purchase-modal');
+const purchaseSuccessModal = document.getElementById('purchase-success-modal');
+const confirmPurchaseBtn = document.getElementById('confirm-purchase-btn');
+const cancelPurchaseBtn = document.getElementById('cancel-purchase-btn');
+const closeSuccessModal = document.getElementById('close-success-modal');
+const categoryBtns = document.querySelectorAll('.category-btn');
+
+// Shop functions
+function openShop() {
+    resultScreen.classList.remove('active');
+    shopScreen.classList.add('active');
+    updateShopBalance();
+    renderShopItems('all');
+    playSound('click');
+}
+
+function closeShop() {
+    shopScreen.classList.remove('active');
+    resultScreen.classList.add('active');
+    playSound('click');
+}
+
+function updateShopBalance() {
+    shopBalanceAmount.textContent = formatPrizeAmount(playerBalance);
+}
+
+function formatPrizeAmount(amount) {
+    if (amount >= 1000000000) {
+        return '$' + (amount / 1000000000).toFixed(1) + 'B';
+    } else if (amount >= 1000000) {
+        return '$' + (amount / 1000000).toFixed(1) + 'M';
+    } else if (amount >= 1000) {
+        return '$' + (amount / 1000).toFixed(1) + 'K';
+    } else {
+        return '$' + amount.toLocaleString();
+    }
+}
+
+function renderShopItems(category) {
+    shopGrid.innerHTML = '';
+    
+    const filteredItems = category === 'all' 
+        ? shopItems 
+        : shopItems.filter(item => item.category === category);
+    
+    filteredItems.forEach(item => {
+        const isOwned = ownedItems.includes(item.id);
+        const canAfford = playerBalance >= item.price;
+        
+        const itemElement = document.createElement('div');
+        itemElement.className = `shop-item ${isOwned ? 'owned' : ''}`;
+        itemElement.innerHTML = `
+            <span class="item-icon">${item.icon}</span>
+            <h3 class="item-name">${item.name}</h3>
+            <p class="item-description">${item.description}</p>
+            <div class="item-price">${isOwned ? 'OWNED' : formatPrizeAmount(item.price)}</div>
+            <button class="buy-btn ${isOwned ? 'owned-btn' : ''}" 
+                    data-item-id="${item.id}" 
+                    ${isOwned || !canAfford ? 'disabled' : ''}>
+                ${isOwned ? '✓ Owned' : (!canAfford ? 'Not Enough Funds' : 'Purchase')}
+            </button>
+        `;
+        
+        shopGrid.appendChild(itemElement);
+    });
+    
+    // Add event listeners to buy buttons
+    const buyBtns = shopGrid.querySelectorAll('.buy-btn:not([disabled])');
+    buyBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const itemId = btn.dataset.itemId;
+            initiatePurchase(itemId);
+        });
+    });
+}
+
+function initiatePurchase(itemId) {
+    const item = shopItems.find(i => i.id === itemId);
+    if (!item || ownedItems.includes(itemId) || playerBalance < item.price) {
+        return;
+    }
+    
+    selectedItemForPurchase = item;
+    
+    // Update purchase modal
+    document.getElementById('purchase-item-icon').textContent = item.icon;
+    document.getElementById('purchase-item-name').textContent = item.name;
+    document.getElementById('purchase-item-price').textContent = formatPrizeAmount(item.price);
+    document.getElementById('purchase-balance').textContent = formatPrizeAmount(playerBalance);
+    
+    // Show modal
+    purchaseModal.classList.add('active');
+    playSound('click');
+}
+
+function confirmPurchase() {
+    if (!selectedItemForPurchase) return;
+    
+    // Deduct price from balance
+    playerBalance -= selectedItemForPurchase.price;
+    
+    // Add to owned items
+    ownedItems.push(selectedItemForPurchase.id);
+    
+    // Apply item effect if consumable
+    if (selectedItemForPurchase.type === 'consumable') {
+        applyConsumableEffect(selectedItemForPurchase);
+    }
+    
+    // Hide purchase modal
+    purchaseModal.classList.remove('active');
+    
+    // Show success modal
+    document.getElementById('success-message').textContent = 
+        `You've successfully purchased ${selectedItemForPurchase.name}!`;
+    purchaseSuccessModal.classList.add('active');
+    
+    // Update shop
+    updateShopBalance();
+    renderShopItems(document.querySelector('.category-btn.active').dataset.category);
+    
+    // Play purchase sound
+    playSound('correct');
+    
+    selectedItemForPurchase = null;
+}
+
+function cancelPurchase() {
+    purchaseModal.classList.remove('active');
+    selectedItemForPurchase = null;
+    playSound('click');
+}
+
+function closeSuccessAndContinue() {
+    purchaseSuccessModal.classList.remove('active');
+    playSound('click');
+}
+
+function applyConsumableEffect(item) {
+    console.log(`Applied consumable: ${item.name}`);
+    // Store active power-ups for use in next game
+    if (!gameState.activePowerUps) {
+        gameState.activePowerUps = [];
+    }
+    gameState.activePowerUps.push(item.id);
+}
+
+function setBalanceFromGame(prize) {
+    // Convert prize string to number
+    const prizeNumber = parseInt(prize.replace(/[$,]/g, ''));
+    playerBalance = prizeNumber;
+}
+
+// Shop event listeners
+if (shopBtn) {
+    shopBtn.addEventListener('click', openShop);
+}
+
+if (backToResultBtn) {
+    backToResultBtn.addEventListener('click', closeShop);
+}
+
+if (confirmPurchaseBtn) {
+    confirmPurchaseBtn.addEventListener('click', confirmPurchase);
+}
+
+if (cancelPurchaseBtn) {
+    cancelPurchaseBtn.addEventListener('click', cancelPurchase);
+}
+
+if (closeSuccessModal) {
+    closeSuccessModal.addEventListener('click', closeSuccessAndContinue);
+}
+
+// Category filter buttons
+categoryBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        categoryBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderShopItems(btn.dataset.category);
+        playSound('click');
+    });
+});
 
 // ===== INITIALIZE =====
 loadQuestions();
